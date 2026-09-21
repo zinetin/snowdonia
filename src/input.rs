@@ -59,6 +59,22 @@ impl InputMap {
 
         Self { input_map }
     }
+
+    pub fn poll(&self) -> ActionState {
+        let mut state = ActionState::default();
+        for (input, action) in &self.input_map {
+            if input.is_down() {
+                state.held.insert(*action);
+            }
+            if input.is_pressed() {
+                state.pressed.insert(*action);
+            }
+            if input.is_released() {
+                state.released.insert(*action);
+            }
+        }
+        state
+    }
 }
 
 #[derive(Default)]
