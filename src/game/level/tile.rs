@@ -34,7 +34,7 @@ impl TileMap {
     // Note that tx and ty are measured in TILE_SIZE not in PIXEL or subpixels
     pub fn get(&self, tx: i32, ty: i32) -> TileType {
         if tx < 0 || ty < 0 || tx >= self.width as i32 || tx >= self.height as i32 {
-            return TileType::Empty;
+            return TileType::Debug;
         }
         self.tiles[ty as usize * self.width + tx as usize]
     }

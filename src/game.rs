@@ -48,13 +48,19 @@ pub async fn game(menu_state: AppState, bindings: InputMap) {
             game_state.debug = !game_state.debug
         }
 
+        level.timescale = 0.5;
+
         // Checks if the game is paused, and if the game is not paused, it updates the physics,
         // then draws the game.
         if game_state.paused {
         } else {
             while accumulator >= FRAME {
                 for entity in entities.iter_mut() {
-                    entity.update(FRAME, &inputs, &level.screens[level.current_screen].tilemap);
+                    entity.update(
+                        FRAME * level.timescale,
+                        &inputs,
+                        &level.screens[level.current_screen].tilemap,
+                    );
                 }
 
                 accumulator -= FRAME

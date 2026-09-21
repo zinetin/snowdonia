@@ -3,10 +3,11 @@ use crate::game::Entity;
 use crate::game::GameState;
 use crate::helpers::approach_zero;
 use crate::input::{Action, ActionState};
+use crate::vars::P_JUMP_GRAVITY_MULTIPER;
 use crate::vars::{
-    DEBUG_FONT_SIZE, MAX_STEPS, P_AIR_RESISTANCE, P_BUFFER_TIME, P_COYOTE_TIME, P_FRICTION,
-    P_GRAVITY, P_HEIGHT, P_JUMP_ACC, P_JUMP_INIT_VEL, P_MAX_FALL, P_MAX_FAST_FALL, P_MAX_JUMP_TIME,
-    P_WALK_ACC, P_WALK_VEL, P_WIDTH,
+    DEBUG_FONT_SIZE, MAX_STEPS, PIXEL, P_AIR_RESISTANCE, P_BUFFER_TIME, P_COYOTE_TIME, P_FRICTION,
+    P_GRAVITY, P_HEIGHT, P_JUMP_ACC, P_JUMP_GRAVITY_MULTIPLIER_LIMIT, P_JUMP_INIT_VEL, P_MAX_FALL,
+    P_MAX_FAST_FALL, P_MAX_JUMP_TIME, P_WALK_ACC, P_WALK_VEL, P_WIDTH,
 };
 use macroquad::prelude::*;
 
@@ -24,6 +25,7 @@ pub struct Player {
 
     pub x_vel: f32,
     pub y_vel: f32,
+    pub gravity: f32,
 
     pub grounded: bool,
     pub jumping: bool,
@@ -42,11 +44,36 @@ impl Entity for Player {
         // Walk velocity calculation
         self.x_vel = Self::add_walk_vel(self.x_vel, dt, inputs);
 
+        self.rolling = if inputs.held(Action::Roll) {
+            true
+        } else {
+            false
+        };
+
+        if inputs.pressed(Action::Roll) {
+            self.r.y += P_HEIGHT / 3.0 * 2.0;
+        }
+        if inputs.released(Action::Roll) {
+            self.r.y -= P_HEIGHT / 3.0 * 2.0;
+        }
+
+        self.r.h = if self.rolling {
+            P_HEIGHT / 3.0
+        } else {
+            P_HEIGHT
+        };
+
+        if inputs.held(Action::Jump) && self.y_vel.abs() < P_JUMP_GRAVITY_MULTIPLIER_LIMIT {
+            self.gravity = P_GRAVITY * P_JUMP_GRAVITY_MULTIPER;
+        } else {
+            self.gravity = P_GRAVITY;
+        }
+
         // Apply Gravity
         if self.y_vel < P_MAX_FAST_FALL && inputs.held(Action::Down) {
-            self.y_vel += P_GRAVITY * dt;
+            self.y_vel += self.gravity * dt;
         } else if self.y_vel < P_MAX_FALL {
-            self.y_vel += P_GRAVITY * dt;
+            self.y_vel += self.gravity * dt;
         }
 
         // Coyote Time Calculations
@@ -115,7 +142,9 @@ impl Entity for Player {
         if game_state.debug {
             self.draw_debug_box()
         }
-        draw_rectangle(self.r.x, self.r.y, self.r.w, self.r.h, WHITE);
+        let x_pixel = (self.r.x / PIXEL).floor() * PIXEL;
+        let y_pixel = (self.r.y / PIXEL).floor() * PIXEL;
+        draw_rectangle(x_pixel, y_pixel, self.r.w, self.r.h, WHITE);
     }
 }
 
@@ -186,12 +215,19 @@ impl Player {
         if self.jump_buffer > 0.0 && self.coyote_time > 0.0 {
             self.jumping = true;
             self.jump_time_left = P_MAX_JUMP_TIME;
-            self.y_vel = -1.0 * P_JUMP_INIT_VEL
+            self.y_vel = -1.0 * P_JUMP_INIT_VEL;
+            self.jump_buffer = 0.0;
+            self.coyote_time = 0.0;
+            self.x_vel += if self.x_vel != 0.0 {
+                self.x_vel.signum() * 40.0
+            } else {
+                0.0
+            }
         }
 
         if self.jumping && inputs.held(Action::Jump) && self.jump_time_left > 0.0 {
             self.y_vel -= P_JUMP_ACC * dt;
-            self.jump_time_left -= dt
+            self.jump_time_left -= dt;
         } else {
             self.jumping = false;
             self.jump_time_left = 0.0;
@@ -205,6 +241,7 @@ impl Default for Player {
             r: Rect::new(0.0, 0.0, P_WIDTH, P_HEIGHT),
             x_vel: 0.0,
             y_vel: 0.0,
+            gravity: P_GRAVITY,
             grounded: false,
             jumping: false,
             rolling: false,

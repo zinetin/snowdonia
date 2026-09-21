@@ -8,6 +8,7 @@ pub struct Level {
     pub init_player_state: Player,
     pub screens: Vec<Screen>,
     pub current_screen: usize,
+    pub timescale: f32,
 }
 
 #[derive(Default)]
@@ -18,7 +19,7 @@ pub struct Screen {
 
 impl Level {
     pub fn debug() -> Self {
-        let mut tilemap = TileMap::empty(48, 22);
+        let mut tilemap = TileMap::empty(48, 40);
 
         tilemap.fill_rect(0, 13, 48, 2, TileType::Debug);
         tilemap.fill_rect(5, 10, 4, 2, TileType::Debug);
