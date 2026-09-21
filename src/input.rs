@@ -1,26 +1,15 @@
 use macroquad::prelude::*;
 use std::collections::{HashMap, HashSet};
 
+// Create an enum so that key input, mouse input and gamepad input can all be interacted by the
+// same functions
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Input {
     Key(KeyCode),
     Mse(MouseButton),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Action {
-    Up,
-    Down,
-    Left,
-    Right,
-    Jump,
-    Dash,
-    Roll,
-    Grab,
-    Pause,
-    Debug,
-}
-
+// Make key and mouse and (eventually) gamepad input all be interacted by the same function
 impl Input {
     pub fn is_down(&self) -> bool {
         match *self {
@@ -44,11 +33,28 @@ impl Input {
     }
 }
 
+// Create the Actions that the inputs will match to
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Action {
+    Up,
+    Down,
+    Left,
+    Right,
+    Jump,
+    Dash,
+    Roll,
+    Grab,
+    Pause,
+    Debug,
+}
+
+// Struct for the bindings hashmap
 pub struct InputMap {
     input_map: HashMap<Input, Action>,
 }
 
 impl InputMap {
+    // Create the default bindings
     pub fn defaults() -> Self {
         let mut input_map: HashMap<Input, Action> = HashMap::new();
         input_map.insert(Input::Key(KeyCode::E), Action::Up);
@@ -56,10 +62,12 @@ impl InputMap {
         input_map.insert(Input::Key(KeyCode::D), Action::Down);
         input_map.insert(Input::Key(KeyCode::F), Action::Right);
         input_map.insert(Input::Key(KeyCode::GraveAccent), Action::Debug);
+        input_map.insert(Input::Key(KeyCode::Escape), Action::Pause);
 
         Self { input_map }
     }
 
+    // Poll the input to see the active actions
     pub fn poll(&self) -> ActionState {
         let mut state = ActionState::default();
         for (input, action) in &self.input_map {
@@ -77,6 +85,7 @@ impl InputMap {
     }
 }
 
+// Struct so that you don't have to poll the input for every single entity reading inputs
 #[derive(Default)]
 pub struct ActionState {
     held: HashSet<Action>,
@@ -84,6 +93,8 @@ pub struct ActionState {
     released: HashSet<Action>,
 }
 
+// Implimentation of checking if a key is help, pressed or released
+// // Implimentation of checking if a key is help, pressed or released
 impl ActionState {
     pub fn held(&self, a: Action) -> bool {
         self.held.contains(&a)

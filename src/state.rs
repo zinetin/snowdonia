@@ -1,3 +1,4 @@
+// All of the stuff about the state of the application as a whole.
 #[derive(PartialEq)]
 pub enum AppStateScreen {
     Menu,
