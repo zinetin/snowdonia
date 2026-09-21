@@ -1,5 +1,5 @@
 use macroquad::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Input {
@@ -58,5 +58,30 @@ impl InputMap {
         input_map.insert(Input::Key(KeyCode::GraveAccent), Action::Debug);
 
         Self { input_map }
+    }
+}
+
+#[derive(Default)]
+pub struct ActionState {
+    held: HashSet<Action>,
+    pressed: HashSet<Action>,
+    released: HashSet<Action>,
+}
+
+impl ActionState {
+    pub fn held(&self, a: Action) -> bool {
+        self.held.contains(&a)
+    }
+    pub fn pressed(&self, a: Action) -> bool {
+        self.pressed.contains(&a)
+    }
+    pub fn released(&self, a: Action) -> bool {
+        self.released.contains(&a)
+    }
+    pub fn axis(&self) -> Vec2 {
+        // Add logic for gamepad at some point
+        let x = self.held(Action::Right) as u32 as f32 - self.held(Action::Left) as u32 as f32;
+        let y = self.held(Action::Down) as u32 as f32 - self.held(Action::Up) as u32 as f32;
+        vec2(x, y)
     }
 }
