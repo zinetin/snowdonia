@@ -61,6 +61,7 @@ impl InputMap {
         input_map.insert(Input::Key(KeyCode::S), Action::Left);
         input_map.insert(Input::Key(KeyCode::D), Action::Down);
         input_map.insert(Input::Key(KeyCode::F), Action::Right);
+        input_map.insert(Input::Key(KeyCode::Space), Action::Jump);
         input_map.insert(Input::Key(KeyCode::GraveAccent), Action::Debug);
         input_map.insert(Input::Key(KeyCode::Escape), Action::Pause);
 

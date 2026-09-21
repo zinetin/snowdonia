@@ -1,6 +1,7 @@
 // The main function itself
 
 pub mod game;
+pub mod helpers;
 pub mod input;
 pub mod state;
 pub mod vars;

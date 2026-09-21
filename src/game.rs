@@ -1,7 +1,7 @@
 use crate::game::entities::entity_trait::Entity;
 use crate::game::level::Level;
 use crate::game::state::GameState;
-use crate::input::InputMap;
+use crate::input::{Action, InputMap};
 use crate::state::{AppState, AppStateScreen};
 use crate::vars::{FRAME, MAX_ACCUMULATOR};
 use macroquad::prelude::*;
@@ -29,6 +29,9 @@ pub async fn game(menu_state: AppState, bindings: InputMap) {
         // Increase the accumulator by the delta time
         accumulator += dt;
 
+        // Poll the users inputs
+        let inputs = bindings.poll();
+
         // Check if the accumulator is higher than a certain maximum (Ie if there is a big lag
         // spike, this pauses the game and resets the accumulator before any physics is calculated
         // to try to avoid deaths due to sudden lag)
@@ -37,15 +40,21 @@ pub async fn game(menu_state: AppState, bindings: InputMap) {
             accumulator = 0.0;
         }
 
+        if inputs.pressed(Action::Pause) {
+            game_state.paused = !game_state.paused
+        }
+
+        if inputs.pressed(Action::Debug) {
+            game_state.debug = !game_state.debug
+        }
+
         // Checks if the game is paused, and if the game is not paused, it updates the physics,
         // then draws the game.
         if game_state.paused {
         } else {
             while accumulator >= FRAME {
-                let inputs = bindings.poll();
-
                 for entity in entities.iter_mut() {
-                    entity.update(FRAME, &inputs);
+                    entity.update(FRAME, &inputs, &level.screens[level.current_screen].tilemap);
                 }
 
                 accumulator -= FRAME
@@ -54,16 +63,17 @@ pub async fn game(menu_state: AppState, bindings: InputMap) {
 
         // The level gets drawn regardless of whether the game is paused or not
         clear_background(BLACK);
-        draw_level(&entities, &level);
+
+        draw_level(&entities, &level, &game_state);
 
         next_frame().await;
     }
 }
 
 // Function to draw the level to tidy things up in the main game loop
-pub fn draw_level(entities: &Vec<Box<dyn Entity>>, level: &Level) {
+pub fn draw_level(entities: &Vec<Box<dyn Entity>>, level: &Level, game_state: &GameState) {
     for entity in entities.iter() {
-        entity.draw();
+        entity.draw(game_state);
     }
     level.draw();
 }

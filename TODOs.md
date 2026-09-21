@@ -1,0 +1,7 @@
+ - [ ] Balance Physics constants
+ - [ ] Stop the player from phasing through the floor when there is a block above it 
+ - [ ] Add the dash and roll
+ - [ ] Add a pause menu
+ - [ ] Make the game look nicer
+ - [ ] Add camera control
+ - [ ] Add screen transitions
