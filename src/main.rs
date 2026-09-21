@@ -1,6 +1,7 @@
 pub mod game;
 pub mod input;
 pub mod state;
+pub mod vars;
 
 #[macroquad::main("Snowdonia")]
 async fn main() {
