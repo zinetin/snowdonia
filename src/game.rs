@@ -1,14 +1,14 @@
 use crate::game::entities::entity_trait::Entity;
+use crate::game::game_state::GameState;
 use crate::game::level::Level;
-use crate::game::state::GameState;
 use crate::input::{Action, InputMap};
 use crate::state::{AppState, AppStateScreen};
 use crate::vars::{FRAME, MAX_ACCUMULATOR};
 use macroquad::prelude::*;
 
 pub mod entities;
+pub mod game_state;
 pub mod level;
-pub mod state;
 
 pub async fn game(menu_state: AppState, bindings: InputMap) {
     // Load the level (Just a debug level right now)
@@ -26,45 +26,62 @@ pub async fn game(menu_state: AppState, bindings: InputMap) {
     while menu_state.menu_scene == AppStateScreen::Game {
         // Get the delta time
         let dt = get_frame_time();
-        // Increase the accumulator by the delta time
-        accumulator += dt;
 
         // Poll the users inputs
         let inputs = bindings.poll();
 
-        // Check if the accumulator is higher than a certain maximum (Ie if there is a big lag
-        // spike, this pauses the game and resets the accumulator before any physics is calculated
-        // to try to avoid deaths due to sudden lag)
-        if accumulator >= MAX_ACCUMULATOR {
-            game_state.paused = true;
-            accumulator = 0.0;
-        }
+        // Pauses the game on pause action
+        game_state.toggle_pause(inputs.pressed(Action::Pause));
 
-        if inputs.pressed(Action::Pause) {
-            game_state.paused = !game_state.paused
-        }
-
+        // Opens the debug box on debug action
         if inputs.pressed(Action::Debug) {
             game_state.debug = !game_state.debug
         }
 
         level.timescale = 1.0;
 
-        // Checks if the game is paused, and if the game is not paused, it updates the physics,
-        // then draws the game.
-        if game_state.paused {
-        } else {
-            while accumulator >= FRAME {
-                for entity in entities.iter_mut() {
-                    entity.update(
-                        FRAME * level.timescale,
-                        &inputs,
-                        &level.screens[level.current_screen].tilemap,
-                    );
-                }
+        // Increase the accumulator by the delta time if the game is not paused
+        if !game_state.paused {
+            accumulator += dt;
+        }
 
-                accumulator -= FRAME
+        // Check if the accumulator is higher than a certain maximum (Ie if there is a big lag
+        // spike, this pauses the game and resets the accumulator before any physics is calculated
+        // to try to avoid deaths due to sudden lag)
+        if accumulator >= MAX_ACCUMULATOR {
+            game_state.toggle_pause(true);
+            accumulator = 0.0;
+        }
+
+        while accumulator >= FRAME {
+            // If the game is paused, no physics calculation should happen.
+            if game_state.paused {
+                for entity in entities.iter_mut() {
+                    entity.update_buffers(FRAME * level.timescale, &inputs);
+                }
             }
+            // Either updates the physics or decreases the freeze frames
+            else {
+                // If the game still has the freeze frames, it decreases the freeze frames
+                if game_state.freeze_frames > 0.0 {
+                    game_state.freeze_frames -= FRAME;
+                    for entity in entities.iter_mut() {
+                        entity.update_buffers(FRAME * level.timescale, &inputs);
+                    }
+                }
+                // Otherwise it updates the physics
+                else {
+                    game_state.guarenteed_step = false;
+                    for entity in entities.iter_mut() {
+                        entity.update(
+                            FRAME * level.timescale,
+                            &inputs,
+                            &level.screens[level.current_screen].tilemap,
+                        );
+                    }
+                }
+            }
+            accumulator -= FRAME
         }
 
         // The level gets drawn regardless of whether the game is paused or not

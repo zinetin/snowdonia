@@ -5,4 +5,5 @@ use crate::input::ActionState;
 pub trait Entity {
     fn update(&mut self, dt: f32, inputs: &ActionState, tilemap: &TileMap);
     fn draw(&self, game_state: &GameState);
+    fn update_buffers(&mut self, dt: f32, inputs: &ActionState);
 }

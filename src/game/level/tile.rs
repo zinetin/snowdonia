@@ -106,11 +106,11 @@ impl TileMap {
                     } else if dx < 0.0 {
                         r.x = (tx + 1) as f32 * TILE_SIZE;
                     }
-                    return true;
+                    return false;
                 }
             }
         }
-        false
+        true
     }
 
     pub fn move_y(&self, r: &mut Rect, dy: f32) -> bool {
@@ -124,10 +124,10 @@ impl TileMap {
                     } else if dy < 0.0 {
                         r.y = (ty + 1) as f32 * TILE_SIZE;
                     }
-                    return true;
+                    return false;
                 }
             }
         }
-        false
+        true
     }
 }
