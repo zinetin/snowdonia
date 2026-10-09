@@ -5,11 +5,16 @@ use crate::helpers::approach_zero;
 use crate::input::{Action, ActionState};
 use crate::vars::{
     DEBUG_FONT_SIZE, MAX_STEPS, PIXEL, P_AIR_RESISTANCE, P_BUFFER_TIME, P_COYOTE_TIME, P_FRICTION,
-    P_GRAVITY, P_HEIGHT, P_JUMP_ACC, P_JUMP_GRAVITY_MULTIPER, P_JUMP_GRAVITY_MULTIPLIER_LIMIT,
-    P_JUMP_INIT_VEL, P_MAX_CEILING_TIME, P_MAX_FALL, P_MAX_FAST_FALL, P_MAX_JUMP_TIME,
-    P_ROLL_HEIGHT, P_ROLL_OFFSET, P_WALK_ACC, P_WALK_VEL, P_WIDTH,
+    P_GRAVITY, P_HEIGHT, P_JUMP_GRAVITY_MULTIPER, P_JUMP_GRAVITY_MULTIPLIER_LIMIT,
+    P_MAX_CEILING_TIME, P_MAX_FALL, P_MAX_FAST_FALL, P_ROLL_HEIGHT, P_ROLL_OFFSET, P_WALK_ACC,
+    P_WALK_VEL, P_WIDTH,
 };
 use macroquad::prelude::*;
+
+pub mod draw_debug_box;
+pub mod entity_impl;
+pub mod jump;
+pub mod walk;
 
 #[derive(Default, Clone, Debug)]
 pub enum WallSide {
@@ -210,83 +215,6 @@ impl Entity for Player {
 impl Player {
     pub fn new() -> Self {
         Self { ..Self::default() }
-    }
-
-    fn draw_debug_box(&self) {
-        // {:#.1?} = pretty-print, floats to 1 decimal place
-        let text = format!("{:#.1?}", self);
-        let lines: Vec<&str> = text.lines().collect();
-
-        let font_size = DEBUG_FONT_SIZE as f32;
-        let line_h = font_size * 1.2;
-        let pad = 8.0;
-
-        // Width of the widest line, so the box fits the text
-        let text_w = lines
-            .iter()
-            .map(|l| measure_text(l, None, DEBUG_FONT_SIZE, 1.0).width)
-            .fold(0.0, f32::max);
-
-        let box_w = text_w + pad * 2.0;
-        let box_h = lines.len() as f32 * line_h + pad * 2.0;
-        let x = screen_width() - box_w - pad;
-        let y = pad;
-
-        draw_rectangle(x, y, box_w, box_h, Color::new(0.0, 0.0, 0.0, 0.7));
-        draw_rectangle_lines(x, y, box_w, box_h, 2.0, WHITE);
-
-        for (i, line) in lines.iter().enumerate() {
-            // draw_text's y is the text baseline, so add font_size to sit inside the box
-            draw_text(
-                line,
-                x + pad,
-                y + pad + i as f32 * line_h + font_size,
-                font_size,
-                WHITE,
-            );
-        }
-    }
-
-    pub fn add_walk_vel(curr_x_vel: f32, dt: f32, inputs: &ActionState) -> f32 {
-        // Calculate dx due to walk input
-        let walk_dx = inputs.axis().x * P_WALK_ACC * dt;
-        // Check to see which is larger, current velocity, or maximum walk velocity.
-        let limit = P_WALK_VEL.max(curr_x_vel.abs());
-        // Calculate the new velocity
-        let new_vel = curr_x_vel + walk_dx;
-        // Set self.x_vel to the new velocity if the new velocity is less than whichever is larger
-        // of current velocity or maximum walk velocity, or set it to the limit, if new vel is
-        // larger than the limit
-        new_vel.clamp(-limit, limit)
-    }
-
-    pub fn jump(&mut self, dt: f32, inputs: &ActionState) {
-        if self.jump_buffer > 0.0 {
-            self.jump_buffer -= dt;
-        } else if self.jump_buffer < 0.0 {
-            self.jump_buffer = 0.0;
-        }
-
-        if inputs.pressed(Action::Jump) {
-            self.jump_buffer = P_BUFFER_TIME;
-        }
-
-        if self.jump_buffer > 0.0 && self.coyote_time > 0.0 {
-            self.jumping = true;
-            self.jump_time_left = P_MAX_JUMP_TIME;
-            self.y_vel = -1.0 * P_JUMP_INIT_VEL;
-            self.jump_buffer = 0.0;
-            self.coyote_time = 0.0;
-            self.x_vel *= 1.2
-        }
-
-        if self.jumping && inputs.held(Action::Jump) && self.jump_time_left > 0.0 {
-            self.y_vel -= P_JUMP_ACC * dt;
-            self.jump_time_left -= dt;
-        } else {
-            self.jumping = false;
-            self.jump_time_left = 0.0;
-        }
     }
 }
 

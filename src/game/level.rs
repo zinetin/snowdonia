@@ -1,4 +1,4 @@
-use crate::game::entities::{entity_trait::Entity, player::Player};
+use crate::game::entities::player::Player;
 use crate::game::level::tile::{TileMap, TileType};
 
 pub mod tile;
@@ -19,7 +19,7 @@ pub struct Screen {
 
 impl Level {
     pub fn debug() -> Self {
-        let mut tilemap = TileMap::empty(48, 40);
+        let mut tilemap = TileMap::empty(40, 23);
 
         tilemap.fill_rect(0, 13, 48, 2, TileType::Debug);
         tilemap.fill_rect(5, 10, 4, 2, TileType::Debug);
