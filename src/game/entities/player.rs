@@ -3,11 +3,11 @@ use crate::game::Entity;
 use crate::game::GameState;
 use crate::helpers::approach_zero;
 use crate::input::{Action, ActionState};
-use crate::vars::P_JUMP_GRAVITY_MULTIPER;
 use crate::vars::{
     DEBUG_FONT_SIZE, MAX_STEPS, PIXEL, P_AIR_RESISTANCE, P_BUFFER_TIME, P_COYOTE_TIME, P_FRICTION,
-    P_GRAVITY, P_HEIGHT, P_JUMP_ACC, P_JUMP_GRAVITY_MULTIPLIER_LIMIT, P_JUMP_INIT_VEL, P_MAX_FALL,
-    P_MAX_FAST_FALL, P_MAX_JUMP_TIME, P_WALK_ACC, P_WALK_VEL, P_WIDTH,
+    P_GRAVITY, P_HEIGHT, P_JUMP_ACC, P_JUMP_GRAVITY_MULTIPER, P_JUMP_GRAVITY_MULTIPLIER_LIMIT,
+    P_JUMP_INIT_VEL, P_MAX_CEILING_TIME, P_MAX_FALL, P_MAX_FAST_FALL, P_MAX_JUMP_TIME,
+    P_ROLL_HEIGHT, P_ROLL_OFFSET, P_WALK_ACC, P_WALK_VEL, P_WIDTH,
 };
 use macroquad::prelude::*;
 
@@ -28,6 +28,7 @@ pub struct Player {
     pub gravity: f32,
 
     pub grounded: bool,
+    pub ceilinged: bool,
     pub jumping: bool,
     pub rolling: bool,
     pub wall_side: WallSide,
@@ -37,6 +38,7 @@ pub struct Player {
 
     pub jump_buffer: f32,
     pub jump_time_left: f32,
+    pub ceiling_time: f32,
 }
 
 impl Entity for Player {
@@ -44,21 +46,17 @@ impl Entity for Player {
         // Walk velocity calculation
         self.x_vel = Self::add_walk_vel(self.x_vel, dt, inputs);
 
-        self.rolling = if inputs.held(Action::Roll) {
-            true
-        } else {
-            false
-        };
+        self.rolling = inputs.held(Action::Roll);
 
         if inputs.pressed(Action::Roll) {
-            self.r.y += P_HEIGHT / 3.0 * 2.0;
+            self.r.y += P_ROLL_OFFSET;
         }
         if inputs.released(Action::Roll) {
-            self.r.y -= P_HEIGHT / 3.0 * 2.0;
+            self.r.y -= P_ROLL_OFFSET;
         }
 
         self.r.h = if self.rolling {
-            P_HEIGHT / 3.0
+            P_ROLL_HEIGHT
         } else {
             P_HEIGHT
         };
@@ -103,6 +101,16 @@ impl Entity for Player {
         self.x_vel = approach_zero(self.x_vel, drag_x);
         self.y_vel = approach_zero(self.y_vel, drag_y);
 
+        if self.ceilinged {
+            self.ceiling_time += dt;
+        } else {
+            self.ceiling_time = 0.0;
+        }
+
+        if self.jumping && self.ceiling_time >= P_MAX_CEILING_TIME {
+            self.jumping = false;
+        }
+
         // All modifiers to x and y vel go above this
 
         //
@@ -121,6 +129,7 @@ impl Entity for Player {
         let mut ddy = dy / steps as f32;
 
         self.grounded = false;
+        self.ceilinged = false;
 
         for _ in 0..steps {
             if ddx != 0.0 && tilemap.move_x(&mut self.r, ddx) {
@@ -131,6 +140,9 @@ impl Entity for Player {
             if ddy != 0.0 && tilemap.move_y(&mut self.r, ddy) {
                 if ddy > 0.0 {
                     self.grounded = true;
+                }
+                if ddy < 0.0 {
+                    self.ceilinged = true;
                 }
                 self.y_vel = 0.0;
                 ddy = 0.0;
@@ -218,11 +230,7 @@ impl Player {
             self.y_vel = -1.0 * P_JUMP_INIT_VEL;
             self.jump_buffer = 0.0;
             self.coyote_time = 0.0;
-            self.x_vel += if self.x_vel != 0.0 {
-                self.x_vel.signum() * 40.0
-            } else {
-                0.0
-            }
+            self.x_vel *= 1.2
         }
 
         if self.jumping && inputs.held(Action::Jump) && self.jump_time_left > 0.0 {
@@ -243,6 +251,7 @@ impl Default for Player {
             y_vel: 0.0,
             gravity: P_GRAVITY,
             grounded: false,
+            ceilinged: false,
             jumping: false,
             rolling: false,
             wall_side: WallSide::None,
@@ -250,6 +259,7 @@ impl Default for Player {
             coyote_time: 0.0,
             jump_buffer: 0.0,
             jump_time_left: 0.0,
+            ceiling_time: 0.0,
         }
     }
 }

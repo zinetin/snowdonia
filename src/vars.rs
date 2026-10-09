@@ -12,6 +12,8 @@ pub const DEBUG_FONT_SIZE: u16 = 20;
 
 // Constants for the player
 pub const P_HEIGHT: f32 = 3.0 * TILE_SIZE;
+pub const P_ROLL_HEIGHT: f32 = P_HEIGHT / 3.0;
+pub const P_ROLL_OFFSET: f32 = P_HEIGHT - P_ROLL_HEIGHT;
 pub const P_WIDTH: f32 = 2.0 * TILE_SIZE;
 
 pub const P_WALK_ACC: f32 = 4000.0;
@@ -32,3 +34,4 @@ pub const P_FRICTION: f32 = 2500.0;
 pub const P_COYOTE_TIME: f32 = 5.0 * FRAME;
 pub const P_BUFFER_TIME: f32 = 5.0 * FRAME;
 pub const P_MAX_JUMP_TIME: f32 = 15.0 * FRAME;
+pub const P_MAX_CEILING_TIME: f32 = 2.0 * FRAME;

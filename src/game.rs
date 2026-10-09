@@ -48,7 +48,7 @@ pub async fn game(menu_state: AppState, bindings: InputMap) {
             game_state.debug = !game_state.debug
         }
 
-        level.timescale = 0.5;
+        level.timescale = 1.0;
 
         // Checks if the game is paused, and if the game is not paused, it updates the physics,
         // then draws the game.
